@@ -1,6 +1,6 @@
 # Jira MCP Server
 
-This project provides a powerful, natural language interface for interacting with Jira. It uses a CrewAI agent powered by Google's Gemini model to understand user prompts and perform actions like creating, searching, and updating Jira issues.
+This project provides a powerful, natural language interface for interacting with Jira. It uses a CrewAI agent powered by Google's Gemini model to understand user prompts and perform actions like creating, searching, validating and updating Jira issues.
 
 The backend is built with FastAPI, and a user-friendly web interface is provided with Streamlit.
 
