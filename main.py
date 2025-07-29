@@ -6,6 +6,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 from crewai import Agent, Crew, Process, Task, LLM
+from fastapi.responses import JSONResponse
 
 # Import our custom tool
 from jira_tools import (
@@ -14,7 +15,8 @@ from jira_tools import (
     validate_project_key,
     get_issue_details,
     search_issues,
-    transition_issue
+    transition_issue,
+    jira_client
 )
 
 # Load environment variables
@@ -98,3 +100,90 @@ async def invoke_agent(request: JiraTaskRequest):
 @app.get("/")
 def read_root():
     return {"status": "Jira MCP Server is running."}
+
+@app.get("/context/issue/{issue_key}", tags=["MCP Context API"])
+def get_issue_context(issue_key: str):
+    """
+    MCP-compatible context document for a single Jira issue.
+    Returns structured JSON with fields useful for LLMs and agents.
+    """
+    if not jira_client:
+        raise HTTPException(status_code=500, detail="Jira client is not initialized.")
+    
+    try:
+        issue = jira_client.issue(issue_key)
+        context = {
+            "type": "issue",
+            "key": issue.key,
+            "summary": issue.fields.summary,
+            "description": issue.fields.description or "No description provided.",
+            "status": issue.fields.status.name,
+            "assignee": issue.fields.assignee.displayName if issue.fields.assignee else "Unassigned",
+            "project": issue.fields.project.key,
+            "url": f"{os.getenv('JIRA_SERVER')}/browse/{issue.key}"
+        }
+        return JSONResponse(content=context)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving issue context: {e}")
+    
+@app.get("/context/issues/{project_key}", tags=["MCP Context API"])
+def get_issues_for_project(project_key: str):
+    """
+    MCP-compatible context documents for issues in a Jira project.
+    Returns a list of structured JSON objects, one per issue.
+    """
+    if not jira_client:
+        raise HTTPException(status_code=500, detail="Jira client is not initialized.")
+
+    try:
+        jql = f"project = {project_key} ORDER BY created DESC"
+        issues = jira_client.search_issues(jql, maxResults=10)
+
+        result = []
+        for issue in issues:
+            issue_data = {
+                "type": "issue",
+                "key": issue.key,
+                "summary": getattr(issue.fields, "summary", "No summary"),
+                "description": getattr(issue.fields, "description", "No description provided."),
+                "status": getattr(issue.fields.status, "name", "Unknown"),
+                "assignee": (
+                    getattr(issue.fields.assignee, "displayName", None)
+                    if issue.fields.assignee else "Unassigned"
+                ),
+                "project": getattr(issue.fields.project, "key", "Unknown"),
+                "url": f"{os.getenv('JIRA_SERVER')}/browse/{issue.key}"
+            }
+            result.append(issue_data)
+
+        return JSONResponse(content=result)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving issues: {str(e)}")
+
+@app.get("/context/projects", tags=["MCP Context API"])
+def get_all_projects():
+    """
+    MCP-compatible context documents for all accessible Jira projects.
+    Returns a list of structured JSON objects, one per project.
+    """
+    if not jira_client:
+        raise HTTPException(status_code=500, detail="Jira client is not initialized.")
+
+    try:
+        projects = jira_client.projects()
+
+        result = []
+        for project in projects:
+            result.append({
+                "type": "project",
+                "key": project.key,
+                "name": project.name,
+                "id": project.id,
+                "url": f"{os.getenv('JIRA_SERVER')}/browse/{project.key}"
+            })
+
+        return JSONResponse(content=result)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving projects: {str(e)}")
