@@ -1,6 +1,6 @@
 # Jira MCP Server
 
-This project provides a powerful, natural language interface for interacting with Jira. It uses a CrewAI agent powered by Google's Gemini model to understand user prompts and perform actions like creating, searching, validating and updating Jira issues.
+This project provides a powerful, natural language interface for interacting with Jira. It uses a CrewAI agent powered by Google's Gemini model to understand user prompts and perform actions like creating, searching, validating, and updating Jira issues.
 
 The backend is built with FastAPI, and a user-friendly web interface is provided with Streamlit.
 
@@ -14,6 +14,7 @@ The agent can understand natural language requests to perform the following Jira
 - **Add Comments**: Add comments to existing issues.
 - **Transition Issues**: Change the status of an issue (e.g., from 'To Do' to 'In Progress').
 - **Validate Projects**: Check if a project key is valid before performing actions.
+- **Expose Context API**: Provides structured JSON data about Jira projects and issues through dedicated endpoints, making it easy for other tools and agents to consume Jira information.
 
 ## 🏛️ Architecture
 
@@ -21,7 +22,8 @@ The application consists of two main components that work together:
 
 1.  **FastAPI Backend (`main.py`)**:
 
-    - Exposes a single endpoint (`/invoke`).
+    - Exposes an agent endpoint (`/invoke`) for natural language processing.
+    - Exposes a set of context endpoints (`/context/...`) for serving raw, structured Jira data.
     - Receives a natural language prompt.
     - Initializes a CrewAI agent ("Jira Product Manager").
     - The agent uses the Gemini LLM to decide which Jira tool to use based on the prompt.
@@ -32,11 +34,32 @@ The application consists of two main components that work together:
     - Sends the prompt to the FastAPI backend.
     - Displays the agent's final response.
 
-```
-User -> [Streamlit UI] --(HTTP POST)--> [FastAPI Backend] --(CrewAI)--> [Jira Agent] --(Jira API)--> [Jira Cloud/Server]
-                                                                             |
-                                                                             +-----> [Gemini LLM]
-```
+## 🔌 API Endpoints
+
+The FastAPI server exposes the following endpoints. You can also explore them interactively via the auto-generated documentation at `http://127.0.0.1:8000/docs` when the server is running.
+
+### Agent Invocation
+
+-   `POST /invoke`
+    -   **Description**: The primary endpoint to interact with the CrewAI agent. It accepts a natural language prompt and returns the agent's final response.
+    -   **Request Body**: `{"prompt": "your request here"}`
+    -   **Response Body**: `{"response": "agent's text response"}`
+
+### MCP Context API
+
+These endpoints provide raw, structured data directly from Jira, formatted for easy consumption by other applications or agents.
+
+-   `GET /context/projects`
+    -   **Description**: Retrieves a list of all accessible Jira projects.
+    -   **Example**: `curl http://127.0.0.1:8000/context/projects`
+
+-   `GET /context/issues/{project_key}`
+    -   **Description**: Retrieves the issues for a specific Jira project.
+    -   **Example**: `curl http://127.0.0.1:8000/context/issues/SCRUM`
+
+-   `GET /context/issue/{issue_key}`
+    -   **Description**: Retrieves detailed, structured information for a single Jira issue.
+    -   **Example**: `curl http://127.0.0.1:8000/context/issue/SCRUM-123`
 
 ## 🛠️ Setup and Installation
 
