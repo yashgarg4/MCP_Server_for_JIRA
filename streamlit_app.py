@@ -4,8 +4,8 @@ import json
 import os
 
 # --- Configuration ---
-# Assuming your FastAPI app runs on http://127.0.0.1:8000
-# If your FastAPI app is deployed elsewhere, update this URL.
+# FastAPI app already running on http://127.0.0.1:8000
+# If FastAPI app is deployed elsewhere, update this URL.
 FASTAPI_ENDPOINT = os.getenv("FASTAPI_BACKEND_URL", "http://127.0.0.1:8000/invoke")
 
 # --- Streamlit UI ---
