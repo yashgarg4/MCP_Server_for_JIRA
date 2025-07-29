@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+.vscode/ # VS Code settings, optional but often ignored
+
+# Environment variables
+.env
+.flaskenv
+
+# IDE-specific files (if applicable)
+.idea/ # PyCharm
+*.iml
+
+# OS generated files
+.DS_Store # macOS
+Thumbs.db # Windows
+
+# Build artifacts
+dist/
+build/
+*.egg
+
+# Streamlit specific
+.streamlit/
+streamlit_app.pyc # If Streamlit generates compiled files
+
+# FastAPI/Uvicorn specific
+# No specific files usually generated that need ignoring beyond Python defaults
+
+# Logs
+*.log
